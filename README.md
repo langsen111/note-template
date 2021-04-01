@@ -1,9 +1,10 @@
-# GranDAO-Chain
+# GrandaoChain
 
 自由人的自由联合！
 
 基于[Substrate-node-template 3.0](https://github.com/substrate-developer-hub/substrate-node-template)开发。
 
+官网：www.grandao.io
 
 ## Getting Started
 
