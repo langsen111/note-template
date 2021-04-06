@@ -4,7 +4,7 @@
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// https://substrate.dev/docs/en/knowledgebase/runtime/frame
 
-use frame_support::{decl_module, decl_storage, decl_event, decl_error, ensure, StorageMap, dispatch, traits::Get};
+use frame_support::{decl_module, decl_storage, decl_event, decl_error, ensure, dispatch};
 use frame_system::ensure_signed;
 
 use sp_std::vec::Vec; 
@@ -30,7 +30,10 @@ decl_storage! {
 	trait Store for Module<T: Config> as GrandaoModule {
 		// Learn more about declaring storage items:
 		// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
-		Tasks: map hasher(blake2_128_concat) u128 => (T::AccountId, u8, u128, Vec<u8>, T::BlockNumber);
+        /// 任务详情
+		pub Tasks get(fn tasks): map hasher(twox_64_concat) u128 => (T::AccountId, u8, u128, Vec<u8>, T::BlockNumber);
+        /// 我的任务列表
+        pub MyAllTasks get (fn my_all_tasks): map hasher(blake2_128_concat) T::AccountId => Vec<u128>;
 	}
 }
 
@@ -84,7 +87,12 @@ decl_module! {
             let current_block = <frame_system::Module<T>>::block_number();
 
             // 将任务数据存储到链上
-            Tasks::<T>::insert(&task_id, (&publisher, task_status.clone(), task_reward.clone(), task_detail.clone(), current_block));
+            Tasks::<T>::insert(&task_id, (publisher.clone(), task_status.clone(), task_reward.clone(), task_detail.clone(), current_block));
+
+            // 更新我的任务集
+            let mut my_tasks = MyAllTasks::<T>::get(&publisher);
+            my_tasks.push(task_id.clone());
+            MyAllTasks::<T>::insert(&publisher, my_tasks);
 
             // 触发创建任务事件 
 			Self::deposit_event(RawEvent::TaskCreated(publisher, task_id, task_status, task_reward, task_detail));
@@ -114,7 +122,7 @@ decl_module! {
             let current_block = <frame_system::Module<T>>::block_number();
 
             // 修改任务
-            Tasks::<T>::insert(&task_id, (&publisher, task_status.clone(), task_reward.clone(), task_detail.clone(), current_block));
+            Tasks::<T>::insert(&task_id, (publisher.clone(), task_status.clone(), task_reward.clone(), task_detail.clone(), current_block));
 
             // 触发修改任务事件
             Self::deposit_event(RawEvent::TaskUpdated(publisher, task_id, task_status, task_reward, task_detail));
@@ -143,6 +151,16 @@ decl_module! {
 
             // 从链上存储中撤销任务
             Tasks::<T>::remove(&task_id);
+
+            // 更新我的任务集
+            let mut my_tasks = MyAllTasks::<T>::get(&publisher);
+            match my_tasks.binary_search(&task_id) {
+				Ok(index) => {
+					my_tasks.remove(index); //移除指定task_id
+                    MyAllTasks::<T>::insert(&publisher, my_tasks);
+				},
+				Err(_) => (),
+			}            
 
             // 触发撤销任务事件
             Self::deposit_event(RawEvent::TaskRevoked(publisher, task_id));
