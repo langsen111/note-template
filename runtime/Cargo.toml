@@ -43,6 +43,14 @@ pallet-sudo = { default-features = false, version = '3.0.0' }
 pallet-timestamp = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
+pallet-contracts = { version = '3.0.0', default_features = false }
+pallet-contracts-primitives = { version = '3.0.0', default_features = false }
+pallet-contracts-rpc-runtime-api = { version = '3.0.0', default-features = false }
+pallet-proxy = { version = '3.0.0', default-features = false }
+pallet-multisig = { version = '3.0.0', default-features = false }
+pallet-recovery = { version = '3.0.0', default-features = false }
+pallet-scheduler = { version = "3.0.0", default-features = false }
+
 sp-api = { default-features = false, version = '3.0.0' }
 sp-block-builder = { default-features = false, version = '3.0.0' }
 sp-consensus-aura = { default-features = false, version = '0.9.0' }
@@ -54,6 +62,8 @@ sp-session = { default-features = false, version = '3.0.0' }
 sp-std = { default-features = false, version = '3.0.0' }
 sp-transaction-pool = { default-features = false, version = '3.0.0' }
 sp-version = { default-features = false, version = '3.0.0' }
+sp-io = { version = '3.0.0', default-features = false }
+
 
 [features]
 default = ['std']
@@ -84,6 +94,13 @@ std = [
     'pallet-timestamp/std',
     'pallet-transaction-payment/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
+    'pallet-contracts/std',
+    'pallet-contracts-primitives/std',
+    'pallet-contracts-rpc-runtime-api/std',
+    'pallet-proxy/std',
+	'pallet-multisig/std',
+	'pallet-recovery/std',
+    'pallet-scheduler/std',
     'sp-api/std',
     'sp-block-builder/std',
     'sp-consensus-aura/std',
@@ -95,4 +112,6 @@ std = [
     'sp-std/std',
     'sp-transaction-pool/std',
     'sp-version/std',
+    'sp-io/std',
+
 ]
