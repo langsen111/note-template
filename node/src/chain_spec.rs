@@ -8,7 +8,7 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::ChainType;
 use sp_core::OpaquePeerId; 
-use node_template_runtime::NodeAuthorizationConfig;
+// use node_template_runtime::NodeAuthorizationConfig;
 use serde_json::map::Map;
 
 // The URL for the telemetry server.
@@ -167,30 +167,30 @@ fn testnet_genesis(
 				..Default::default()
 			},
 		}),
-		pallet_node_authorization: Some(NodeAuthorizationConfig {
-			nodes: vec![
-				(
-					OpaquePeerId(bs58::decode("12D3KooWLrtav3RP8jBRAH2txWzuzWavnqWzyMvgN3tPpf8o8cu6").into_vec().unwrap()),
-					endowed_accounts[0].clone()
-				),
-				(
-					OpaquePeerId(bs58::decode("12D3KooWQgoeQadA3DmC9D9HHYV6aA2Tg4e82xyDTKXvw9HmHESo").into_vec().unwrap()),
-					endowed_accounts[1].clone()
-				),
-				(
-					OpaquePeerId(bs58::decode("12D3KooWJFAQhGWAxsf5v5MNzQnZtm1nw6e2cC979gnSgoALzxDC").into_vec().unwrap()),
-					endowed_accounts[1].clone()
-				),
-				(
-					OpaquePeerId(bs58::decode("12D3KooWKCBtHRnDuyRFFaDWn1RamiQwNhahhPHoCd68JAMx9fiQ").into_vec().unwrap()),
-					endowed_accounts[1].clone()
-				),
-				(
-					OpaquePeerId(bs58::decode("12D3KooWRNCoCC7pMVGPeJT8KThZWiqDmxaWtCbqhx3SLfLoZ8yg").into_vec().unwrap()),
-					endowed_accounts[1].clone()
-				),
-			],
-		}),
+		// pallet_node_authorization: Some(NodeAuthorizationConfig {
+		// 	nodes: vec![
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWLrtav3RP8jBRAH2txWzuzWavnqWzyMvgN3tPpf8o8cu6").into_vec().unwrap()),
+		// 			endowed_accounts[0].clone()
+		// 		),
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWQgoeQadA3DmC9D9HHYV6aA2Tg4e82xyDTKXvw9HmHESo").into_vec().unwrap()),
+		// 			endowed_accounts[1].clone()
+		// 		),
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWJFAQhGWAxsf5v5MNzQnZtm1nw6e2cC979gnSgoALzxDC").into_vec().unwrap()),
+		// 			endowed_accounts[1].clone()
+		// 		),
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWKCBtHRnDuyRFFaDWn1RamiQwNhahhPHoCd68JAMx9fiQ").into_vec().unwrap()),
+		// 			endowed_accounts[1].clone()
+		// 		),
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWRNCoCC7pMVGPeJT8KThZWiqDmxaWtCbqhx3SLfLoZ8yg").into_vec().unwrap()),
+		// 			endowed_accounts[1].clone()
+		// 		),
+		// 	],
+		// }),
 		// orml_tokens: Some(TokensConfig {
 		// 	endowed_accounts: endowed_accounts
 		// 	.iter()
