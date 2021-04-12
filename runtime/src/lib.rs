@@ -9,11 +9,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_std::prelude::*;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature,
+	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature,ModuleId,
 	transaction_validity::{TransactionValidity, TransactionSource},
 };
 use sp_runtime::traits::{
-	AccountIdLookup, BlakeTwo256, Block as BlockT, Verify, IdentifyAccount, NumberFor,
+	AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Verify, IdentifyAccount, NumberFor,
+	Zero,
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -42,12 +43,19 @@ use pallet_contracts::weights::WeightInfo;
 use frame_system::{
 	limits::{BlockWeights, BlockLength}, EnsureRoot
 };
+use orml_currencies::{BasicCurrencyAdapter, Currency};
+use orml_traits::parameter_type_with_key;
+
 
 /// Import the template pallet.
 pub use pallet_template;
 
 /// Import the grandao pallet.
 pub use pallet_grandao;
+
+/// Import the gdnft pallet.
+pub use pallet_gdnft;
+pub mod gdnft;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -305,6 +313,64 @@ impl pallet_grandao::Config for Runtime {
 	type Event = Event;
 }
 
+parameter_type_with_key! {
+    pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+        Zero::zero()
+    };
+}
+
+parameter_types! {
+	pub const BitCountryTreasuryModuleId: ModuleId = ModuleId(*b"gdt/trsy");
+    pub TreasuryModuleAccount: AccountId = BitCountryTreasuryModuleId::get().into_account();
+}
+
+type Amount = i128;
+pub type CurrencyId = u32;
+
+impl orml_tokens::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type Amount = Amount;
+	type CurrencyId = CurrencyId;
+	type WeightInfo = ();
+	type ExistentialDeposits = ExistentialDeposits;
+	type OnDust = orml_tokens::TransferDust<Runtime, TreasuryModuleAccount>;
+}
+
+parameter_types! {
+	pub const GetNativeCurrencyId: CurrencyId = 0;
+}
+
+impl orml_currencies::Config for Runtime {
+	type Event = Event;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+	type GetNativeCurrencyId = GetNativeCurrencyId;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+    pub CreateClassDeposit: Balance = 500 * CENTS;
+    pub CreateTokenDeposit: Balance = 100 * DOLLARS;
+	pub const NftModuleId: ModuleId = ModuleId(*b"gdt/anft");
+}
+
+impl pallet_gdnft::Config for Runtime{
+	type Event = Event;
+	type CreateClassDeposit = CreateClassDeposit;
+    type CreateTokenDeposit = CreateTokenDeposit;
+    type Currency = Currency<Runtime, GetNativeCurrencyId>;
+    type WeightInfo = gdnft::WeightInfo<Runtime>;
+    type ModuleId = NftModuleId;
+}
+
+impl orml_nft::Config for Runtime {
+    type ClassId = u32;
+    type TokenId = u64;
+    type ClassData = pallet_gdnft::ClassData;
+    type TokenData = pallet_gdnft::TokenData;
+}
+
 parameter_types! {
 	pub const TombstoneDeposit: Balance = deposit(
 		1,
@@ -447,6 +513,10 @@ construct_runtime!(
 		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
 		GrandaoModule: pallet_grandao::{Module, Call, Storage, Event<T>},
 		Contracts: pallet_contracts::{Module, Call, Config<T>, Storage, Event<T>},
+		NftModule: pallet_gdnft::{Module, Call ,Storage, Event<T>},
+		OrmlNFT: orml_nft::{Module ,Storage},
+		Currencies: orml_currencies::{Module, Storage, Call, Event<T>},
+		Tokens: orml_tokens::{Module, Storage, Call, Event<T>},
 
 		Multisig: pallet_multisig::{Module, Call, Storage, Event<T>},
 		Recovery: pallet_recovery::{Module, Call, Storage, Event<T>},
