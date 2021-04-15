@@ -47,6 +47,9 @@ pub use pallet_staking::StakerStatus;
 use pallet_session::historical as session_historical;
 use orml_currencies::{BasicCurrencyAdapter, Currency};
 use orml_traits::parameter_type_with_key;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -57,6 +60,8 @@ pub use pallet_grandao;
 /// Import the gdnft pallet.
 pub use pallet_gdnft;
 pub mod gdnft;
+
+pub type Nonce = u64;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -104,15 +109,17 @@ pub mod opaque {
 		pub struct SessionKeys {
 			pub babe: Babe,
 			pub grandpa: Grandpa,
+			pub im_online: ImOnline,
+			pub authority_discovery: AuthorityDiscovery,
 		}
 	}
 }
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("grandao-node"),
-	impl_name: create_runtime_str!("grandao-node"),
+	spec_name: create_runtime_str!("template-node"),
+	impl_name: create_runtime_str!("template-node"),
 	authoring_version: 1,
-	spec_version: 101,
+	spec_version: 4,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -130,6 +137,11 @@ pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 // Kusama
 pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = HOURS;
+pub const EPOCH_DURATION_IN_SLOTS: u64 = {
+	const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
+
+	(EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
+};
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary BABE blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -252,7 +264,7 @@ impl pallet_babe::Config for Runtime {
     type EpochDuration = EpochDuration;
     type ExpectedBlockTime = ExpectedBlockTime;
     type EpochChangeTrigger = pallet_babe::ExternalTrigger;
-    type KeyOwnerProofSystem = (); // Historical;
+    type KeyOwnerProofSystem = Historical; // Historical;
     type KeyOwnerProof =
     <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
     type KeyOwnerIdentification =
@@ -608,6 +620,38 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 	type Extrinsic = UncheckedExtrinsic;
 }
 
+// add authority_discovery
+impl pallet_authority_discovery::Config for Runtime {}
+
+// add im_online
+parameter_types! {
+	pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS as _;
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+}
+
+impl pallet_im_online::Config for Runtime {
+	type AuthorityId = ImOnlineId;
+	type Event = Event;
+	type SessionDuration = SessionDuration;
+	type ValidatorSet = Historical;
+	type ReportUnresponsiveness = ();// Offences
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type WeightInfo = ();
+}
+
+// add authorship
+parameter_types! {
+	pub const UncleGenerations: BlockNumber = 5;
+}
+
+impl pallet_authorship::Config for Runtime {
+	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+	type UncleGenerations = UncleGenerations;
+	type FilterUncle = ();
+	type EventHandler = (Staking, ImOnline);
+}
+
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -616,29 +660,37 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
-
-		Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
 		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
+
+		// Staking related modules
+		Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
 		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
 		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
 		Historical: session_historical::{Module},
-		// Include the custom logic from the template pallet in the runtime.
+		ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
+		AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
 
+		
+
+		// Include the custom logic from the template pallet in the runtime.
 		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
 		GrandaoModule: pallet_grandao::{Module, Call, Storage, Event<T>},
-		Contracts: pallet_contracts::{Module, Call, Config<T>, Storage, Event<T>},
 		NftModule: pallet_gdnft::{Module, Call ,Storage, Event<T>},
+
+		// ORML related modules
 		OrmlNFT: orml_nft::{Module ,Storage},
 		Currencies: orml_currencies::{Module, Storage, Call, Event<T>},
 		Tokens: orml_tokens::{Module, Storage, Call, Event<T>},
 
 		Multisig: pallet_multisig::{Module, Call, Storage, Event<T>},
 		Recovery: pallet_recovery::{Module, Call, Storage, Event<T>},
+		Contracts: pallet_contracts::{Module, Call, Config<T>, Storage, Event<T>},
 		Proxy: pallet_proxy::{Module, Call, Storage, Event<T>},
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
 

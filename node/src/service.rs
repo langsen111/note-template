@@ -5,11 +5,9 @@ use std::time::Duration;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use node_template_runtime::{self, opaque::Block, RuntimeApi};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
-use sp_inherents::InherentDataProviders;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_finality_grandpa::SharedVoterState;
-use sc_keystore::LocalKeystore;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -124,13 +122,6 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			&config, backend.clone(), task_manager.spawn_handle(), client.clone(), network.clone(),
 		);
 	}
-
-	let role = config.role.clone();
-	let force_authoring = config.force_authoring;
-	let backoff_authoring_blocks: Option<()> = None;
-	let name = config.network.node_name.clone();
-	let enable_grandpa = !config.disable_grandpa;
-	let prometheus_registry = config.prometheus_registry().cloned();
 
 	let rpc_extensions_builder = {
 		let client = client.clone();
