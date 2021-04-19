@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_std::prelude::*;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, u32_trait::{_1, _2, _3, _4},};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, u32_trait::{_1, _2, _3, _5},};
 use sp_runtime::{
 	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature, ModuleId,
 	curve::PiecewiseLinear,
@@ -32,7 +32,7 @@ pub use pallet_balances::Call as BalancesCall;
 pub use sp_runtime::{Percent, Permill, Perbill};
 pub use frame_support::{
 	construct_runtime, parameter_types, StorageValue,
-	traits::{KeyOwnerProofSystem, ContainsLengthBound, Contains, Randomness},
+	traits::{KeyOwnerProofSystem, ContainsLengthBound, Contains, Randomness, LockIdentifier},
 	weights::{
 		Weight, IdentityFee, DispatchClass,
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -49,6 +49,8 @@ use orml_currencies::{BasicCurrencyAdapter, Currency};
 use orml_traits::parameter_type_with_key;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use static_assertions::const_assert;
+
 
 
 /// Import the template pallet.
@@ -590,8 +592,8 @@ impl pallet_staking::Config for Runtime {
 
     type Currency = Balances;
     type CurrencyToVote = CurrencyToVote;
-    type RewardRemainder = (); // TODO: Treasury
-    type Slash = (); // TODO: Treasury
+    type RewardRemainder = BitCountryTreasury; // TODO: Treasury
+    type Slash = BitCountryTreasury; // TODO: Treasury
     type Reward = (); // rewards are minted from the voi
 
     type SessionInterface = Self;
@@ -648,14 +650,10 @@ impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = EnsureOneOf<
 		AccountId,
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureMembers<_4, AccountId, CouncilCollective>,
+		pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>
 	>;
 
-	type RejectOrigin = EnsureOneOf<
-		AccountId,
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureMembers<_2, AccountId, CouncilCollective>,
-	>;
+	type RejectOrigin = MoreThanHalfCouncil;
 	//type TipReportDepositPerByte = TipReportDepositPerByte;
 	type Event = Event;
 	type OnSlash = ();
@@ -723,12 +721,12 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (Staking, ImOnline);
 }
 
-// add collective
+// add council collective
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
-	pub const ProposalVotesRequired: u32 = 3;
-	pub const ProposalMininumDeposit: Balance = 0;
+	pub const CouncilMaxMembers: u32 = 100;
+
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -738,9 +736,97 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type Event = Event;
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
-	type MaxMembers = ();
+	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
+}
+
+// add technical collective
+parameter_types! {
+    pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS;
+    pub const TechnicalMaxProposals: u32 = 100;
+    pub const TechnicalMaxMembers: u32 = 100;
+}
+
+type TechnicalCollective = pallet_collective::Instance2;
+impl pallet_collective::Config<TechnicalCollective> for Runtime {
+    type Origin = Origin;
+    type Proposal = Call;
+    type Event = Event;
+    type MotionDuration = TechnicalMotionDuration;
+    type MaxProposals = TechnicalMaxProposals;
+    type MaxMembers = TechnicalMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type WeightInfo = ();
+}
+
+// add membership
+type MoreThanHalfCouncil = EnsureOneOf<
+    AccountId,
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>
+>;
+
+impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
+    type Event = Event;
+    type AddOrigin = MoreThanHalfCouncil;
+    type RemoveOrigin = MoreThanHalfCouncil;
+    type SwapOrigin = MoreThanHalfCouncil;
+    type ResetOrigin = MoreThanHalfCouncil;
+    type PrimeOrigin = MoreThanHalfCouncil;
+    type MembershipInitialized = TechnicalCommittee;
+    type MembershipChanged = TechnicalCommittee;
+}
+
+// add indices
+parameter_types! {
+	pub const IndexDeposit: Balance = DOLLARS;
+}
+impl pallet_indices::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Deposit = IndexDeposit;
+	type AccountIndex = AccountIndex;
+	type WeightInfo = ();
+}
+
+// add elections_phragmen
+parameter_types! {
+    pub const CandidacyBond: Balance = 1 * DOLLARS;
+    // 1 storage item created, key size is 32 bytes, value size is 16+16.
+    pub const VotingBondBase: Balance = deposit(1, 64);
+    // additional data per vote is 32 bytes (account id).
+    pub const VotingBondFactor: Balance = deposit(0, 32);
+    /// Daily council elections
+    pub const TermDuration: BlockNumber = 24 * HOURS;
+    pub const DesiredMembers: u32 = 19;
+    pub const DesiredRunnersUp: u32 = 19;
+
+    pub const ElectionsPhragmenModuleId: LockIdentifier = *b"phrelect";
+}
+
+// Make sure that there are no more than MaxMembers members elected via phragmen.
+const_assert!(DesiredMembers::get() <= CouncilMaxMembers::get());
+
+impl pallet_elections_phragmen::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type ChangeMembers = Council;
+    type InitializeMembers = Council;
+
+    type CurrencyToVote = frame_support::traits::U128CurrencyToVote;
+    type CandidacyBond = CandidacyBond;
+    type VotingBondBase = VotingBondBase;
+    type VotingBondFactor = VotingBondFactor;
+
+    type LoserCandidate = BitCountryTreasury;
+    type KickedMember = BitCountryTreasury;
+    type DesiredMembers = DesiredMembers;
+    type DesiredRunnersUp = DesiredRunnersUp;
+    type TermDuration = TermDuration;
+
+    type ModuleId = ElectionsPhragmenModuleId;
+    type WeightInfo = ();
 }
 
 pub struct GeneralCouncilProvider;
@@ -794,6 +880,11 @@ construct_runtime!(
 		ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
 		AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
 		Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
+		TechnicalCommittee: pallet_collective::<Instance2>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
+        TechnicalMembership: pallet_membership::<Instance1>::{Module, Call, Storage, Event<T>, Config<T>},
+        ElectionsPhragmen: pallet_elections_phragmen::{Module, Call, Storage, Event<T>, Config<T>},
+		Indices: pallet_indices::{Module, Call, Storage, Config<T>, Event<T>},
+
 
 		//Treasury
         BitCountryTreasury: pallet_treasury::{Module, Call, Storage, Config, Event<T>},

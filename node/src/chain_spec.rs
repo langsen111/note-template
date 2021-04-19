@@ -2,6 +2,7 @@ use sp_core::{crypto::UncheckedInto, Pair, Public, sr25519};
 use node_template_runtime::{
 	AccountId, BalancesConfig, GenesisConfig, GrandpaConfig, AuthorityDiscoveryConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature, ContractsConfig, ImOnlineConfig,
+	CouncilConfig, TechnicalCommitteeConfig, IndicesConfig,
 	opaque::SessionKeys, SessionConfig, StakingConfig, StakerStatus, DOLLARS, BDTS,
 };
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -75,8 +76,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		move || testnet_genesis(
 			wasm_binary,
 			// Initial PoA authorities
-			vec![authority_keys_from_seed("Alice"),
-				authority_keys_from_seed("Bob"),],
+			vec![authority_keys_from_seed("Alice")],
 			// Sudo account
 			get_account_id_from_seed::<sr25519::Public>("Alice"),
 			// Pre-funded accounts
@@ -233,8 +233,18 @@ fn mainnet_genesis(
 		pallet_grandpa: Some(Default::default()),
 		pallet_authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
 		pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
+		pallet_collective_Instance1: Some(CouncilConfig {
+			members: vec![],
+			phantom: Default::default(),
+		}),
+		pallet_collective_Instance2: Some(TechnicalCommitteeConfig {
+			members: vec![],
+			phantom: Default::default(),
+		}),
+		pallet_membership_Instance1: Some(Default::default()),
+		pallet_elections_phragmen: Some(Default::default()),
 		pallet_treasury: Some(Default::default()),
-		pallet_collective_Instance1: Some(Default::default()),
+		pallet_indices: Some(IndicesConfig { indices: vec![] }),
 
 
 		pallet_session: Some(SessionConfig {
@@ -291,8 +301,18 @@ fn testnet_genesis(
 		pallet_grandpa: Some(Default::default()),
 		pallet_authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
 		pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
+		pallet_collective_Instance1: Some(CouncilConfig {
+			members: vec![],
+			phantom: Default::default(),
+		}),
+		pallet_collective_Instance2: Some(TechnicalCommitteeConfig {
+			members: vec![],
+			phantom: Default::default(),
+		}),
+		pallet_membership_Instance1: Some(Default::default()),
+		pallet_elections_phragmen: Some(Default::default()),
 		pallet_treasury: Some(Default::default()),
-		pallet_collective_Instance1: Some(Default::default()),
+		pallet_indices: Some(IndicesConfig { indices: vec![] }),
 
 
 		pallet_session: Some(SessionConfig {

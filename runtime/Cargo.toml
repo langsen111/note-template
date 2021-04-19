@@ -23,6 +23,8 @@ version = '2.0.0'
 [dependencies]
 hex-literal = { optional = true, version = '0.3.1' }
 serde = { features = ['derive'], optional = true, version = '1.0.119' }
+static_assertions = "1.1.0"
+
 
 # local dependencies
 pallet-template = { path = '../pallets/template', default-features = false, version = '3.0.0' }
@@ -62,6 +64,10 @@ pallet-treasury = { version = '3.0.0', default-features = false }
 pallet-bounties = { version = '3.0.0', default-features = false }
 pallet-tips = { version = '3.0.0', default-features = false }
 pallet-collective = { version = '3.0.0', default-features = false }
+pallet-membership = { version = "3.0.0", default-features = false }
+pallet-elections-phragmen = { version = "3.0.0", default-features = false }
+pallet-indices = { version = "3.0.0", default-features = false }
+
 
 sp-api = { default-features = false, version = '3.0.0' }
 sp-block-builder = { default-features = false, version = '3.0.0' }
@@ -129,6 +135,9 @@ std = [
     'pallet-bounties/std',
     'pallet-tips/std',
     'pallet-collective/std',
+    'pallet-membership/std',
+    'pallet-elections-phragmen/std',
+    'pallet-indices/std',
 
     'sp-authority-discovery/std',
     'sp-api/std',
