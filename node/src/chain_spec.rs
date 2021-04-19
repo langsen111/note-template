@@ -1,8 +1,8 @@
-use sp_core::{Pair, Public, sr25519};
+use sp_core::{crypto::UncheckedInto, Pair, Public, sr25519};
 use node_template_runtime::{
 	AccountId, BalancesConfig, GenesisConfig, GrandpaConfig, AuthorityDiscoveryConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature, ContractsConfig, ImOnlineConfig,
-	opaque::SessionKeys, SessionConfig, StakingConfig, StakerStatus,DOLLARS,
+	opaque::SessionKeys, SessionConfig, StakingConfig, StakerStatus, DOLLARS, BDTS,
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -13,6 +13,8 @@ use sc_service::ChainType;
 use serde_json::map::Map;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use hex_literal::hex;
+
 
 
 // The URL for the telemetry server.
@@ -73,7 +75,8 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		move || testnet_genesis(
 			wasm_binary,
 			// Initial PoA authorities
-			vec![authority_keys_from_seed("Alice")],
+			vec![authority_keys_from_seed("Alice"),
+				authority_keys_from_seed("Bob"),],
 			// Sudo account
 			get_account_id_from_seed::<sr25519::Public>("Alice"),
 			// Pre-funded accounts
@@ -112,30 +115,57 @@ pub fn local_mainnet_config() -> Result<ChainSpec, String> {
 		// ID
 		"Test_Chain",
 		ChainType::Local,
-		move || testnet_genesis(
+		move || mainnet_genesis(
 			wasm_binary,
 			// Initial PoA authorities
 			vec![
-				authority_keys_from_seed("Alice"),
-				authority_keys_from_seed("Bob"),
+				(
+					//     5FEpjDuepNjSTjqeQnQXuFcV54pFeZ6YBdAzCd7pi4kG3xTN
+					hex!["8c6c494fe5b23711365cdf544fbc344c3fb89dbaa3ff4b37df4960758bcef137"].into(),
+					//     5FEpjDuepNjSTjqeQnQXuFcV54pFeZ6YBdAzCd7pi4kG3xTN
+					hex!["8c6c494fe5b23711365cdf544fbc344c3fb89dbaa3ff4b37df4960758bcef137"].into(),
+					//     5CrUZ9vuAKmZwWTknVJXaph8xbpWMeufQht9cGWdYsSMkTUa
+					hex!["451b3e9b67ffea5e90b61e23396451a336e1449620bba3e13fbb96e187007c1a"].unchecked_into(),
+					//5GTyALyDv9EFARPWrotf8yBJ3F3zSyk8NtUqcrtiBDVkbFLb
+					hex!["c2af193a251dee1765136b0ae47647c110ac1225b23a157d6ef6629b1c93fe39"].unchecked_into(),
+					//5GTyALyDv9EFARPWrotf8yBJ3F3zSyk8NtUqcrtiBDVkbFLb
+					hex!["c2af193a251dee1765136b0ae47647c110ac1225b23a157d6ef6629b1c93fe39"].unchecked_into(),
+					//5GTyALyDv9EFARPWrotf8yBJ3F3zSyk8NtUqcrtiBDVkbFLb
+					hex!["c2af193a251dee1765136b0ae47647c110ac1225b23a157d6ef6629b1c93fe39"].unchecked_into(),
+				),
+				(
+					//     5EyKNvvHTqCiF1mtSj3FSxkt6CRJ85LaE6ckGQ91x6CNfXqc
+					hex!["8098ce08491726c0c14879a51fa12f166b55fbc2533e9ecebca31dfcb89df20d"].into(),
+					//     5EyKNvvHTqCiF1mtSj3FSxkt6CRJ85LaE6ckGQ91x6CNfXqc
+					hex!["8098ce08491726c0c14879a51fa12f166b55fbc2533e9ecebca31dfcb89df20d"].into(),
+					//5HWDxcXHPxSowKDXSSKLEkUxXymXw2FA9zKyAwYw7nJ8KpYL
+					hex!["f0a3a2eab48b0e51e8d89732d15da0164eb36951c4db3bd33879b0b343619ba7"].unchecked_into(),
+					//5Fgn5eu1dhHemGLbHRgFuhdjjTHPuGt6UbLmwd2bi7JonwAG
+					hex!["a037c0f83b7ebea2179165f987c6094d5b39e7addc1d2e09edf4a5fa6ebcac32"].unchecked_into(),
+					//5Fgn5eu1dhHemGLbHRgFuhdjjTHPuGt6UbLmwd2bi7JonwAG
+					hex!["a037c0f83b7ebea2179165f987c6094d5b39e7addc1d2e09edf4a5fa6ebcac32"].unchecked_into(),
+					//5Fgn5eu1dhHemGLbHRgFuhdjjTHPuGt6UbLmwd2bi7JonwAG
+					hex!["a037c0f83b7ebea2179165f987c6094d5b39e7addc1d2e09edf4a5fa6ebcac32"].unchecked_into(),
+				),
+				(
+					//     5HdJayk1fELmjE5uRMR92haSLdYFvksi13U1EihvPCz2hoce
+					hex!["f609ee1a21f29af54c84a8e0567333ec3170a2f987d1b74da3fa9c8afbb52f59"].into(),
+					//     5HdJayk1fELmjE5uRMR92haSLdYFvksi13U1EihvPCz2hoce
+					hex!["f609ee1a21f29af54c84a8e0567333ec3170a2f987d1b74da3fa9c8afbb52f59"].into(),
+					//5H1TccKGpCsVM4STCELgHQAq5cMXXXBRSnJETy7hiZAUGZav
+					hex!["dab37ca3624720b03aa2fdf4f2b436041ff151f0e3975f7b9c79e52030ae781e"].unchecked_into(),
+					//5HGxatQ8j4HtoDiwUvT8gL3HMrXBwP4dMBQQPaYpvR6W2Ztc
+					hex!["7a256c0498e35373006232ae18e18ec44c80c9d73aed563100fc8b7e0cf99001"].unchecked_into(),
+					//5HGxatQ8j4HtoDiwUvT8gL3HMrXBwP4dMBQQPaYpvR6W2Ztc
+					hex!["7a256c0498e35373006232ae18e18ec44c80c9d73aed563100fc8b7e0cf99001"].unchecked_into(),
+					//5HGxatQ8j4HtoDiwUvT8gL3HMrXBwP4dMBQQPaYpvR6W2Ztc
+					hex!["7a256c0498e35373006232ae18e18ec44c80c9d73aed563100fc8b7e0cf99001"].unchecked_into(),
+				),
 			],
 			// Sudo account
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			hex!["22e8829c160ada39adec02de745c8d43654b4ef89ebb5e8e7868516e5aa85c69"].into(),
 			// Pre-funded accounts
-			vec![
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_account_id_from_seed::<sr25519::Public>("Charlie"),
-				get_account_id_from_seed::<sr25519::Public>("Dave"),
-				get_account_id_from_seed::<sr25519::Public>("Eve"),
-				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-			],
+			vec![],
 			true,
 		),
 		// Bootnodes
@@ -152,7 +182,7 @@ pub fn local_mainnet_config() -> Result<ChainSpec, String> {
 }
 
 /// Configure initial storage state for FRAME modules.
-fn testnet_genesis(
+fn mainnet_genesis(
 	wasm_binary: &[u8],
 	initial_authorities: Vec<(AccountId, AccountId, BabeId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)>,
 	root_key: AccountId,
@@ -170,13 +200,43 @@ fn testnet_genesis(
 		}),
 		pallet_sudo: Some(SudoConfig { key: root_key.clone() }),
 		pallet_balances: Some(BalancesConfig {
-			// Configure endowed accounts with initial balance of 1 << 60.
-			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
+			// Intergalactic initial supply
+			balances: vec![
+				(
+					// Intergalactic BDTS Tokens 15%
+					hex!["22e8829c160ada39adec02de745c8d43654b4ef89ebb5e8e7868516e5aa85c69"].into(),
+					(1_500_000_000u128 * BDTS) - (3 * INITIAL_STAKING),
+				),
+				(
+					// Treasury for rewards 3%
+					hex!["5632419b258f8c13dbb46a49d90a24374388fb4c9a6f678104f6f77087053632"].into(),
+					300_000_000 * BDTS,
+				),
+				(
+					// Intergalactic Validator01
+					hex!["8c6c494fe5b23711365cdf544fbc344c3fb89dbaa3ff4b37df4960758bcef137"].into(),
+					INITIAL_STAKING,
+				),
+				(
+					// Intergalactic Validator02
+					hex!["8098ce08491726c0c14879a51fa12f166b55fbc2533e9ecebca31dfcb89df20d"].into(),
+					INITIAL_STAKING,
+				),
+				(
+					// Intergalactic Validator03
+					hex!["f609ee1a21f29af54c84a8e0567333ec3170a2f987d1b74da3fa9c8afbb52f59"].into(),
+					INITIAL_STAKING,
+				),
+			],
 		}),
 		pallet_babe: Some(Default::default()),
 		pallet_grandpa: Some(Default::default()),
 		pallet_authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
 		pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
+		pallet_treasury: Some(Default::default()),
+		pallet_collective_Instance1: Some(Default::default()),
+
+
 		pallet_session: Some(SessionConfig {
 			keys: initial_authorities.iter().map(|x| {
 				(x.0.clone(),
@@ -203,41 +263,63 @@ fn testnet_genesis(
 			slash_reward_fraction: Perbill::from_percent(10),
 			..Default::default()
 		}),
-		// pallet_node_authorization: Some(NodeAuthorizationConfig {
-		// 	nodes: vec![
-		// 		(
-		// 			OpaquePeerId(bs58::decode("12D3KooWLrtav3RP8jBRAH2txWzuzWavnqWzyMvgN3tPpf8o8cu6").into_vec().unwrap()),
-		// 			endowed_accounts[0].clone()
-		// 		),
-		// 		(
-		// 			OpaquePeerId(bs58::decode("12D3KooWQgoeQadA3DmC9D9HHYV6aA2Tg4e82xyDTKXvw9HmHESo").into_vec().unwrap()),
-		// 			endowed_accounts[1].clone()
-		// 		),
-		// 		(
-		// 			OpaquePeerId(bs58::decode("12D3KooWJFAQhGWAxsf5v5MNzQnZtm1nw6e2cC979gnSgoALzxDC").into_vec().unwrap()),
-		// 			endowed_accounts[1].clone()
-		// 		),
-		// 		(
-		// 			OpaquePeerId(bs58::decode("12D3KooWKCBtHRnDuyRFFaDWn1RamiQwNhahhPHoCd68JAMx9fiQ").into_vec().unwrap()),
-		// 			endowed_accounts[1].clone()
-		// 		),
-		// 		(
-		// 			OpaquePeerId(bs58::decode("12D3KooWRNCoCC7pMVGPeJT8KThZWiqDmxaWtCbqhx3SLfLoZ8yg").into_vec().unwrap()),
-		// 			endowed_accounts[1].clone()
-		// 		),
-		// 	],
-		// }),
-		// orml_tokens: Some(TokensConfig {
-		// 	endowed_accounts: endowed_accounts
-		// 	.iter()
-		// 	.flat_map(|x| {
-		// 		vec![
-		// 			(x.clone(), 1, 10u128.pow(16)),
-		// 			(x.clone(), 2, 10u128.pow(16)),
-		// 		]
-		// 	})
-		// 	.collect(),
-		// }),
+	}
+}
 
+/// Configure initial storage state for FRAME modules.
+fn testnet_genesis(
+	wasm_binary: &[u8],
+	initial_authorities: Vec<(AccountId, AccountId, BabeId, GrandpaId, ImOnlineId, AuthorityDiscoveryId)>,
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	enable_println: bool,
+) -> GenesisConfig {
+	const INITIAL_STAKING: u128 = 100_000 * DOLLARS;
+
+	GenesisConfig {
+		frame_system: Some(SystemConfig {
+			// Add Wasm runtime to storage.
+			code: wasm_binary.to_vec(),
+			changes_trie_config: Default::default(),
+		}),
+		pallet_sudo: Some(SudoConfig { key: root_key.clone() }),
+		pallet_balances: Some(BalancesConfig {
+			// Configure endowed accounts with initial balance of 1 << 60.
+			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
+		}),
+		pallet_babe: Some(Default::default()),
+		pallet_grandpa: Some(Default::default()),
+		pallet_authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
+		pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
+		pallet_treasury: Some(Default::default()),
+		pallet_collective_Instance1: Some(Default::default()),
+
+
+		pallet_session: Some(SessionConfig {
+			keys: initial_authorities.iter().map(|x| {
+				(x.0.clone(),
+				 x.0.clone(),
+				 session_keys(
+					 x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()
+				 ))
+			}).collect::<Vec<_>>(),
+		}),
+		pallet_contracts: Some(ContractsConfig {
+			current_schedule: pallet_contracts::Schedule {
+				enable_println, // this should only be enabled on development chains
+				..Default::default()
+			},
+		}),
+		pallet_staking: Some(StakingConfig {
+			validator_count: initial_authorities.len() as u32 * 2,
+			minimum_validator_count: initial_authorities.len() as u32,
+			stakers: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), x.1.clone(), INITIAL_STAKING, StakerStatus::Validator))
+				.collect(),
+			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			..Default::default()
+		}),
 	}
 }

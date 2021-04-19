@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_std::prelude::*;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, u32_trait::{_1, _2, _3, _4},};
 use sp_runtime::{
 	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature, ModuleId,
 	curve::PiecewiseLinear,
@@ -32,7 +32,7 @@ pub use pallet_balances::Call as BalancesCall;
 pub use sp_runtime::{Percent, Permill, Perbill};
 pub use frame_support::{
 	construct_runtime, parameter_types, StorageValue,
-	traits::{KeyOwnerProofSystem, Randomness},
+	traits::{KeyOwnerProofSystem, ContainsLengthBound, Contains, Randomness},
 	weights::{
 		Weight, IdentityFee, DispatchClass,
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -620,6 +620,78 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 	type Extrinsic = UncheckedExtrinsic;
 }
 
+// add treasury
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = DOLLARS;
+	pub const SpendPeriod: BlockNumber = DAYS;
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const DataDepositPerByte: Balance = CENTS;
+	pub const TipCountdown: BlockNumber = DAYS;
+	pub const TipFindersFee: Percent = Percent::from_percent(20);
+	pub const TipReportDepositBase: Balance = DOLLARS;
+	pub const TipReportDepositPerByte: Balance = CENTS;
+	pub const MaximumReasonLength: u32 = 16384;
+	pub const BountyDepositBase: Balance = DOLLARS;
+    pub const BountyDepositPayoutDelay: BlockNumber = DAYS;
+    pub const BountyUpdatePeriod: BlockNumber = 14 * DAYS;
+    pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
+    pub const BountyValueMinimum: Balance = 5 * DOLLARS;
+	// pub OffchainSolutionWeightLimit: Weight = BlockWeights::get().max_block
+	// 			  .saturating_sub(BlockExecutionWeight::get())
+	// 			  .saturating_sub(ExtrinsicBaseWeight::get());
+}
+
+impl pallet_treasury::Config for Runtime {
+	type ModuleId = BitCountryTreasuryModuleId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<_4, AccountId, CouncilCollective>,
+	>;
+
+	type RejectOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<_2, AccountId, CouncilCollective>,
+	>;
+	//type TipReportDepositPerByte = TipReportDepositPerByte;
+	type Event = Event;
+	type OnSlash = ();
+	//type ProposalRejection = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type WeightInfo = ();
+	type SpendFunds = ();
+}
+
+impl pallet_bounties::Config for Runtime {
+    type Event = Event;
+    type BountyDepositBase = BountyDepositBase;
+    type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
+    type BountyUpdatePeriod = BountyUpdatePeriod;
+    type BountyCuratorDeposit = BountyCuratorDeposit;
+    type BountyValueMinimum = BountyValueMinimum;
+    type DataDepositPerByte = DataDepositPerByte;
+    type MaximumReasonLength = MaximumReasonLength;
+    type WeightInfo = ();
+}
+
+impl pallet_tips::Config for Runtime {
+    type Event = Event;
+    type DataDepositPerByte = DataDepositPerByte;
+    type MaximumReasonLength = MaximumReasonLength;
+    type Tippers = GeneralCouncilProvider;
+    type TipCountdown = TipCountdown;
+    type TipFindersFee = TipFindersFee;
+    type TipReportDepositBase = TipReportDepositBase;
+    type WeightInfo = ();
+}
+
 // add authority_discovery
 impl pallet_authority_discovery::Config for Runtime {}
 
@@ -651,6 +723,52 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (Staking, ImOnline);
 }
 
+// add collective
+parameter_types! {
+	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const ProposalVotesRequired: u32 = 3;
+	pub const ProposalMininumDeposit: Balance = 0;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = ();
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = ();
+}
+
+pub struct GeneralCouncilProvider;
+impl Contains<AccountId> for GeneralCouncilProvider {
+	fn contains(who: &AccountId) -> bool {
+		Council::is_member(who)
+	}
+
+	fn sorted_members() -> Vec<AccountId> {
+		Council::members()
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn add(_: &AccountId) {
+		todo!()
+	}
+}
+
+impl ContainsLengthBound for GeneralCouncilProvider {
+	fn max_len() -> usize {
+		100
+	}
+	fn min_len() -> usize {
+		0
+	}
+}
+
+
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -675,8 +793,12 @@ construct_runtime!(
 		Historical: session_historical::{Module},
 		ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
 		AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
+		Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
 
-		
+		//Treasury
+        BitCountryTreasury: pallet_treasury::{Module, Call, Storage, Config, Event<T>},
+        Bounties: pallet_bounties::{Module, Call, Storage, Event<T>},
+        Tips: pallet_tips::{Module, Call, Storage, Event<T>},
 
 		// Include the custom logic from the template pallet in the runtime.
 		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},

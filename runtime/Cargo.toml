@@ -58,6 +58,10 @@ pallet-scheduler = { version = '3.0.0', default-features = false }
 pallet-session = { version = '3.0.0', default-features = false, features = ['historical'] }
 pallet-staking = { version = '3.0.0', default-features = false }
 pallet-staking-reward-curve = { version = '3.0.0', default-features = false }
+pallet-treasury = { version = '3.0.0', default-features = false }
+pallet-bounties = { version = '3.0.0', default-features = false }
+pallet-tips = { version = '3.0.0', default-features = false }
+pallet-collective = { version = '3.0.0', default-features = false }
 
 sp-api = { default-features = false, version = '3.0.0' }
 sp-block-builder = { default-features = false, version = '3.0.0' }
@@ -121,6 +125,11 @@ std = [
     'pallet-session/std',
     'pallet-staking/std',
     'pallet-authority-discovery/std',
+    'pallet-treasury/std',
+    'pallet-bounties/std',
+    'pallet-tips/std',
+    'pallet-collective/std',
+
     'sp-authority-discovery/std',
     'sp-api/std',
     'sp-block-builder/std',
